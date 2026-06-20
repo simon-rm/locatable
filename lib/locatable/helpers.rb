@@ -1,6 +1,4 @@
-require "locatable/scopes"
-
-module Locatable::Scopes::Helpers
+module Locatable::Helpers
   module_function
 
   def extract_lat_lng(origin)
