@@ -1,19 +1,17 @@
-# frozen_string_literal: true
-
 require "active_support/concern"
 require "active_record"
-
+require "locatable/scopes/helpers"
 module Locatable::Scopes
-  # class Error < StandardError; end
-  SRID = 4326
-
   extend ActiveSupport::Concern
+
+  SRID = 4326
 
   included do
     scope :within_bounding_box, ->(sw_lat:, sw_lng:, ne_lat:, ne_lng:) do
-      next if [sw_lat, sw_lng, ne_lat, ne_lng].any?(&:blank?)
+      sw_lat, sw_lng, ne_lat, ne_lng =
+        [sw_lat, sw_lng, ne_lat, ne_lng].map { |value| Helpers.parse_float(value) }
 
-      sw_lat, sw_lng, ne_lat, ne_lng = [sw_lat, sw_lng, ne_lat, ne_lng].map(&:to_f)
+      next none if [sw_lat, sw_lng, ne_lat, ne_lng].any?(&:nil?)
 
       location_column = :location_geometry
 
@@ -26,7 +24,6 @@ module Locatable::Scopes
             sw_lng, sw_lat, ne_lng, ne_lat
           ]
         else
-          # handle dateline crossing
           [
             <<~SQL.squish,
               (#{location_column} && ST_MakeEnvelope(?, ?, ?, ?, #{SRID})) OR
@@ -39,6 +36,14 @@ module Locatable::Scopes
       )
 
       where(within_bbox_sql)
+    end
+
+    scope :order_by_closest_to, ->(origin) do
+      lat, lng = Helpers.extract_lat_lng(origin)
+
+      next all if lat.nil? || lng.nil?
+
+      order(Arel.sql("location_geography <-> ST_Point(#{lng}, #{lat}, #{SRID})::geography"))
     end
   end
 end
