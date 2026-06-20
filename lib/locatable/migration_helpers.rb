@@ -24,4 +24,4 @@ module Locatable::MigrationHelpers
     add_index table, :location_geography, using: :gist
     add_index table, :location_geometry, using: :gist
   end
-end 
+end

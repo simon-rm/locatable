@@ -7,9 +7,12 @@ module Locatable::Scopes
   SRID = 4326
 
   included do
-    scope :within_bounding_box, ->(sw_lat:, sw_lng:, ne_lat:, ne_lng:) do
-      sw_lat, sw_lng, ne_lat, ne_lng =
-        [sw_lat, sw_lng, ne_lat, ne_lng].map { |value| Locatable::Helpers.parse_float(value) }
+    scope :within_bounding_box, ->(sw_ne_corners) do
+      sw_corner = sw_ne_corners.flatten[0..1]
+      ne_corner = sw_ne_corners.flatten[2..3]
+
+      sw_lat, sw_lng = Locatable::Helpers.extract_lat_lng(sw_corner)
+      ne_lat, ne_lng = Locatable::Helpers.extract_lat_lng(ne_corner)
 
       next none if [sw_lat, sw_lng, ne_lat, ne_lng].any?(&:nil?)
 
@@ -37,10 +40,34 @@ module Locatable::Scopes
       order(Arel.sql("location_geography <-> ST_Point(#{lng}, #{lat}, #{SRID})::geography"))
     end
 
-    scope :with_distance_to, ->(origin) do
+    scope :select_distance_to, ->(origin) do
       lat, lng = Locatable::Helpers.extract_lat_lng(origin)
 
-      select("ST_Distance(location_geography, ST_Point(#{lng}, #{lat}, #{SRID})::geography) AS distance")
+      distance_sql = if lat.nil? || lng.nil?
+        "NULL"
+      else
+        "ST_Distance(location_geography, ST_Point(#{lng}, #{lat}, #{SRID})::geography)"
+      end
+
+      select("#{distance_sql} AS distance")
+    end
+
+    scope :within_radius, ->(origin, radius) do
+      lat, lng = Locatable::Helpers.extract_lat_lng(origin)
+      radius = Locatable::Helpers.parse_float(radius)
+
+      next none if lat.nil? || lng.nil?
+      next all if radius.nil?
+
+      where(Arel.sql("ST_DWithin(location_geography, ST_Point(#{lng}, #{lat}, #{SRID})::geography, #{radius})"))
+    end
+
+    scope :near, ->(origin, radius = 20, order_by_closest: true, select_distance: false) do
+      scope = all
+      scope = scope.within_radius(origin, radius) if radius.present?
+      scope = scope.order_by_closest_to(origin) if order_by_closest
+      scope = scope.select_distance_to(origin) if select_distance
+      scope
     end
   end
 end
