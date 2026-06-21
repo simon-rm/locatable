@@ -19,4 +19,15 @@ module Locatable::Helpers
   rescue ArgumentError, TypeError
     nil
   end
+
+  def meters_per_unit(unit)
+    Locatable::METERS_PER_UNIT.fetch(Locatable.normalize_unit(unit))
+  end
+
+  def convert_to_meters(distance, unit)
+    distance = parse_float(distance)
+    return nil if distance.nil?
+
+    distance * meters_per_unit(unit)
+  end
 end
