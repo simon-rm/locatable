@@ -92,7 +92,7 @@ describe Locatable::Scopes do
 
     describe "simple happy path case" do
       it "returns locations inside the radius" do
-        _(Location.within_radius([40.7128, -74.0060], 1).count).must_equal 2
+        _(Location.within_radius([40.7128, -74.0060], 1).count).must_equal 3
       end
     end
   end
@@ -106,7 +106,7 @@ describe Locatable::Scopes do
 
     describe "simple happy path case" do
       it "returns nearby locations" do
-        _(Location.near([40.7128, -74.0060], 1).count).must_equal 2
+        _(Location.near([40.7128, -74.0060], 1).count).must_equal 3
       end
     end
   end

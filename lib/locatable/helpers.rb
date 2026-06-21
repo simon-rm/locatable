@@ -20,14 +20,14 @@ module Locatable::Helpers
     nil
   end
 
-  def meters_per_unit(unit)
-    Locatable::METERS_PER_UNIT.fetch(Locatable.normalize_unit(unit))
+  def meters_per_units(units)
+    Locatable::METERS_PER_UNIT.fetch(Locatable.normalize_units(units))
   end
 
-  def convert_to_meters(distance, unit)
+  def convert_to_meters(distance, units)
     distance = parse_float(distance)
     return nil if distance.nil?
 
-    distance * meters_per_unit(unit)
+    distance * meters_per_units(units)
   end
 end

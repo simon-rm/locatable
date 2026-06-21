@@ -43,24 +43,24 @@ module Locatable::Scopes
       order(Arel.sql("location_geography <-> ST_Point(#{lng}, #{lat}, #{SRID})::geography"))
     end
 
-    scope :select_distance_to, ->(origin, unit: nil) do
-      unit ||= Locatable.default_unit
+    scope :select_distance_to, ->(origin, units: nil) do
+      units ||= Locatable.default_units
       lat, lng = Locatable::Helpers.extract_lat_lng(origin)
-      meters_per_unit = Locatable::Helpers.meters_per_unit(unit)
+      meters_per_units = Locatable::Helpers.meters_per_units(units)
 
       distance_sql = if lat.nil? || lng.nil?
         "NULL"
       else
-        "ST_Distance(location_geography, ST_Point(#{lng}, #{lat}, #{SRID})::geography) / #{meters_per_unit}"
+        "ST_Distance(location_geography, ST_Point(#{lng}, #{lat}, #{SRID})::geography) / #{meters_per_units}"
       end
 
       select("#{distance_sql} AS distance")
     end
 
-    scope :within_radius, ->(origin, radius, unit: nil) do
-      unit ||= Locatable.default_unit
+    scope :within_radius, ->(origin, radius, units: nil) do
+      units ||= Locatable.default_units
       lat, lng = Locatable::Helpers.extract_lat_lng(origin)
-      radius = Locatable::Helpers.convert_to_meters(radius, unit)
+      radius = Locatable::Helpers.convert_to_meters(radius, units)
 
       next none if lat.nil? || lng.nil?
       next all if radius.nil?
@@ -68,12 +68,12 @@ module Locatable::Scopes
       where(Arel.sql("ST_DWithin(location_geography, ST_Point(#{lng}, #{lat}, #{SRID})::geography, #{radius})"))
     end
 
-    scope :near, ->(origin, radius = 20, unit: nil, order_by_closest: true, select_distance: false) do
-      unit ||= Locatable.default_unit
+    scope :near, ->(origin, radius = 20, units: nil, order_by_closest: true, select_distance: false) do
+      units ||= Locatable.default_units
       scope = all
-      scope = scope.within_radius(origin, radius, unit: unit) if radius.present?
+      scope = scope.within_radius(origin, radius, units: units) if radius.present?
       scope = scope.order_by_closest_to(origin) if order_by_closest
-      scope = scope.select_distance_to(origin, unit: unit) if select_distance
+      scope = scope.select_distance_to(origin, units: units) if select_distance
       scope
     end
   end

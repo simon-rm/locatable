@@ -15,21 +15,21 @@ module Locatable
   }.freeze
 
   class << self
-    def default_unit
-      @default_unit ||= :km
+    def default_units
+      @default_units ||= :mi
     end
 
-    def default_unit=(unit)
-      @default_unit = normalize_unit(unit)
+    def default_units=(units)
+      @default_units = normalize_units(units)
     end
 
-    def normalize_unit(unit)
-      unit = unit.to_sym
-      return unit if VALID_UNITS.include?(unit)
+    def normalize_units(units)
+      units = units.to_sym
+      return units if VALID_UNITS.include?(units)
 
-      raise ArgumentError, "unit must be one of: #{VALID_UNITS.join(", ")}"
+      raise ArgumentError, "units must be one of: #{VALID_UNITS.join(", ")}"
     rescue NoMethodError
-      raise ArgumentError, "unit must be one of: #{VALID_UNITS.join(", ")}"
+      raise ArgumentError, "units must be one of: #{VALID_UNITS.join(", ")}"
     end
   end
 end

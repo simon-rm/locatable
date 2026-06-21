@@ -1,6 +1,6 @@
 # Locatable
 
-Location scopes for Active Record models backed by PostGIS.
+Simple, fast, Geocoder-compatible PostGIS-backed location scopes for Active Record models.
 
 ## Requirements
 
@@ -57,18 +57,34 @@ Coordinates are passed as `[latitude, longitude]`.
 ```ruby
 origin = [40.7128, -74.0060]
 
+Place.within_bounding_box([[40.70, -74.02], [40.73, -73.99]]) # Geocoder-compatible
+Place.near(origin, 5) # Geocoder-compatible
 Place.within_radius(origin, 5)
-Place.near(origin, 5)
 Place.order_by_closest_to(origin)
 Place.select_distance_to(origin)
-Place.within_bounding_box([[40.70, -74.02], [40.73, -73.99]])
 ```
 
-Distances use kilometers by default. Supported units are `:km`, `:mi`, and `:nm`.
+These 2 calls are equivalent:
 
 ```ruby
-Place.near(origin, 10, unit: :mi)
-Locatable.default_unit = :mi
+Place.near(origin, 2)
+Place.within_radius(origin, 2).order_by_closest_to(origin)
+```
+
+Distances use miles by default. Supported units are `:km`, `:mi`, and `:nm`.
+
+Set the units directly on a scope call:
+
+```ruby
+Place.near(origin, 10, units: :km)
+Place.within_radius(origin, 5, units: :nm)
+```
+
+Or set the default once in an initializer:
+
+```ruby
+# config/initializers/locatable.rb
+Locatable.default_units = :km
 ```
 
 ## Development
