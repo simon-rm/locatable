@@ -9,6 +9,8 @@ module Locatable::Scopes
 
   included do
     scope :within_bounding_box, ->(sw_ne_corners) do
+      next none if sw_ne_corners.nil?
+
       sw_corner = sw_ne_corners.flatten[0..1]
       ne_corner = sw_ne_corners.flatten[2..3]
 
