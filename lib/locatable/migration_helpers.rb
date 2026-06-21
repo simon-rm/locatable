@@ -1,16 +1,16 @@
 module Locatable::MigrationHelpers
-  def make_locatable(table, longitude_column, latitude_column)
+  def make_locatable(table, latitude:, longitude:)
     reversible do |dir|
       dir.up do
         execute <<~SQL
           ALTER TABLE #{table}
           ADD COLUMN location_geography geography(Point, 4326)
           GENERATED ALWAYS AS (
-            ST_Point(#{longitude_column}, #{latitude_column}, 4326)::geography
+            ST_Point(#{longitude}, #{latitude}, 4326)::geography
           ) STORED,
           ADD COLUMN location_geometry geometry(Point, 4326)
           GENERATED ALWAYS AS (
-            ST_Point(#{longitude_column}, #{latitude_column}, 4326)
+            ST_Point(#{longitude}, #{latitude}, 4326)
           ) STORED;
         SQL
       end

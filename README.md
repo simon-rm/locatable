@@ -1,35 +1,92 @@
 # Locatable
 
-TODO: Delete this and the text below, and describe your gem
+Location scopes for Active Record models backed by PostGIS.
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/locatable`. To experiment with that code, run `bin/console` for an interactive prompt.
+## Requirements
+
+- Ruby 3.2+
+- Active Record
+- PostgreSQL with PostGIS
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
+Add the gem to your Gemfile:
 
-Install the gem and add to the application's Gemfile by executing:
-
-```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+```ruby
+gem "locatable"
 ```
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+Then run:
 
-```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+```sh
+bundle install
+```
+
+## Setup
+
+Add latitude and longitude columns, then call `make_locatable` in the migration.
+
+```ruby
+class CreatePlaces < ActiveRecord::Migration[8.1]
+  def change
+    create_table :places do |t|
+      t.float :latitude
+      t.float :longitude
+      t.timestamps
+    end
+
+    make_locatable :places, latitude: :latitude, longitude: :longitude
+  end
+end
+```
+
+`make_locatable` adds generated PostGIS geography and geometry columns, plus GiST indexes.
+
+In the model, call `locatable`:
+
+```ruby
+class Place < ApplicationRecord
+  locatable
+end
 ```
 
 ## Usage
 
-TODO: Write usage instructions here
+Coordinates are passed as `[latitude, longitude]`.
+
+```ruby
+origin = [40.7128, -74.0060]
+
+Place.within_radius(origin, 5)
+Place.near(origin, 5)
+Place.order_by_closest_to(origin)
+Place.select_distance_to(origin)
+Place.within_bounding_box([[40.70, -74.02], [40.73, -73.99]])
+```
+
+Distances use kilometers by default. Supported units are `:km`, `:mi`, and `:nm`.
+
+```ruby
+Place.near(origin, 10, unit: :mi)
+Locatable.default_unit = :mi
+```
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+Install dependencies:
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+```sh
+bin/setup
+```
 
-## Contributing
+Run tests with a PostGIS database URL:
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/locatable.
+```sh
+LOCATABLE_DATABASE_URL=postgis://user:password@localhost/locatable_test bundle exec rake test
+```
+
+Run formatting:
+
+```sh
+bundle exec rake standard
+```

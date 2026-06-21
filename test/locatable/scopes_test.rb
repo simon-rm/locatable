@@ -17,7 +17,7 @@ Class.new(ActiveRecord::Migration[8.1]) do
       table.float :longitude
     end
 
-    make_locatable :locations, :longitude, :latitude
+    make_locatable :locations, latitude: :latitude, longitude: :longitude
   end
 end.migrate(:up)
 
